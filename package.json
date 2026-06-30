@@ -1,0 +1,13 @@
+{
+  "name": "2d-chameleon",
+  "version": "1.0.0",
+  "description": "2D Hide and Seek chameleon game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.17.1"
+  }
+}

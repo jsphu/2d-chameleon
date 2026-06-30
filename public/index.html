@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2D Chameleon: Camouflage Hide & Seek</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div id="app">
+    <!-- BACKGROUND SHADER EFFECTS -->
+    <div class="bg-glow"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- ==============================================
+         MAIN MENU VIEW
+         ============================================== -->
+    <div id="view-menu" class="card active">
+      <div class="logo-container">
+        <h1 class="logo-title">2D CHAMELEON</h1>
+        <p class="logo-subtitle">CAMOUFLAGE HIDE & SEEK</p>
+      </div>
+
+      <div class="form-group">
+        <label for="input-nickname">Enter Nickname</label>
+        <input type="text" id="input-nickname" placeholder="e.g., CamoMaster" maxlength="15" autocomplete="off">
+      </div>
+
+      <div class="menu-actions">
+        <button id="btn-create-lobby" class="btn btn-primary btn-glow">Create Lobby</button>
+        
+        <div class="divider">
+          <span>OR</span>
+        </div>
+
+        <div class="join-container">
+          <input type="text" id="input-lobby-code" placeholder="ENTER 4-LETTER CODE" maxlength="4" autocomplete="off">
+          <button id="btn-join-lobby" class="btn btn-secondary">Join Lobby</button>
+        </div>
+      </div>
+
+      <div class="how-to-play">
+        <h3>How to Play</h3>
+        <ul>
+          <li><strong>Hiders:</strong> Move with <span>WASD</span>/<span>Arrows</span>. Stand in a spot and press <span>Spacebar</span> (or drag mouse) to paint the background onto your body. Hide from the seeker!</li>
+          <li><strong>Seekers:</strong> Wait for the hiding phase to end. Scan the background and click where you suspect a hider is hiding. But beware: there is a <strong>2-second cooldown</strong> on clicks!</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ==============================================
+         LOBBY ROOM VIEW
+         ============================================= -->
+    <div id="view-lobby" class="card">
+      <div class="lobby-header">
+        <div>
+          <h2>Lobby Room</h2>
+          <div class="lobby-code-display">
+            Code: <span id="lobby-code-val">----</span>
+            <button id="btn-copy-code" class="btn-icon" title="Copy Code">📋</button>
+          </div>
+        </div>
+        <button id="btn-leave-lobby" class="btn btn-danger btn-sm">Leave</button>
+      </div>
+
+      <div class="lobby-body">
+        <!-- Player List -->
+        <div class="lobby-players-section">
+          <h3>Players (<span id="lobby-player-count">0</span>)</h3>
+          <div id="lobby-players-list" class="players-list">
+            <!-- Populated dynamically via app.js -->
+          </div>
+        </div>
+
+        <!-- Lobby Settings -->
+        <div class="lobby-settings-section">
+          <h3>Role & Settings</h3>
+          
+          <div class="role-selector">
+            <button id="role-hider" class="role-btn active">
+              <span class="role-icon">🦎</span>
+              <span class="role-name">Hider</span>
+            </button>
+            <button id="role-seeker" class="role-btn">
+              <span class="role-icon">👁️</span>
+              <span class="role-name">Seeker</span>
+            </button>
+          </div>
+
+          <div class="ready-container">
+            <button id="btn-ready" class="btn btn-secondary btn-block">Toggle Ready</button>
+          </div>
+
+          <div id="host-settings" class="host-settings-panel">
+            <h4>Host Controls</h4>
+            <div class="form-group">
+              <label for="select-map">Select Map</label>
+              <select id="select-map">
+                <option value="forest">Verdant Forest (Default)</option>
+                <option value="industrial">Industrial Tiles</option>
+                <option value="cyber">Cyber Grid</option>
+                <option value="custom">Custom Image...</option>
+              </select>
+            </div>
+
+            <!-- Custom Map Upload -->
+            <div id="custom-map-upload" class="file-upload-container hidden">
+              <label for="map-file" class="file-upload-label">
+                <span class="upload-icon">📂</span>
+                <span class="upload-text">Upload Custom Background</span>
+                <span class="upload-subtext">Drag & drop or click to upload PNG/JPG</span>
+              </label>
+              <input type="file" id="map-file" accept="image/*" class="file-input">
+              <div id="upload-preview-container" class="hidden">
+                <img id="upload-preview" src="" alt="Preview">
+                <span id="upload-success-text">Ready to Sync!</span>
+              </div>
+            </div>
+
+            <button id="btn-start-game" class="btn btn-primary btn-block btn-glow btn-disabled" disabled>Start Game</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lobby Chat -->
+      <div class="lobby-chat-section">
+        <h3>Chat</h3>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input-container">
+          <input type="text" id="input-chat" placeholder="Type a message..." maxlength="100" autocomplete="off">
+          <button id="btn-send-chat" class="btn btn-primary">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==============================================
+         GAMEPLAY LEVEL VIEW
+         ============================================== -->
+    <div id="view-game" class="game-view-container">
+      <!-- Game Header Overlay -->
+      <div class="game-header-overlay">
+        <div class="lobby-code-tag">Room: <span id="game-lobby-code">----</span></div>
+        <div class="phase-container">
+          <div class="phase-title" id="game-phase-name">Hiding Phase</div>
+          <div class="phase-timer" id="game-timer">00:00</div>
+        </div>
+        <div class="stats-container">
+          <div class="stat-box">
+            <span class="stat-label">Hiders Left</span>
+            <span class="stat-value" id="game-hiders-left">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Main Canvas Area -->
+      <div class="canvas-wrapper">
+        <canvas id="game-canvas" width="900" height="600"></canvas>
+        
+        <!-- Blackout Overlay for Seeker during Hiding Phase -->
+        <div id="seeker-blackout" class="seeker-blackout hidden">
+          <div class="blackout-content">
+            <span class="blackout-icon">👁️</span>
+            <h2>Hiders are Camouflaging...</h2>
+            <p>You can inspect the empty map background below to study details. Wait for the round to begin.</p>
+          </div>
+        </div>
+
+        <!-- Seeker Click Cooldown Circle Overlay -->
+        <div id="click-cooldown-overlay" class="click-cooldown-overlay hidden">
+          <div class="cooldown-spinner"></div>
+          <div class="cooldown-text">RECHARGING</div>
+        </div>
+
+        <!-- Hider Paint Controls HUD (Bottom Center) -->
+        <div id="hider-hud" class="game-hud hidden">
+          <div class="hud-item">
+            <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move
+          </div>
+          <div class="hud-item">
+            <kbd>Space</kbd> Camo Stamp
+          </div>
+          <div class="divider-vertical"></div>
+          <!-- Brush Modes -->
+          <div class="hud-item">
+            <button id="btn-brush-camo" class="hud-btn active" title="Copy background texture onto chameleon">🖌️ Camo Brush</button>
+            <button id="btn-brush-color" class="hud-btn" title="Paint solid color onto chameleon">🎨 Solid Brush</button>
+          </div>
+          <!-- Color Picking tools -->
+          <div class="hud-item">
+            <input type="color" id="picker-paint-color" value="#ff4a5a" title="Brush color">
+            <button id="btn-eyedropper" class="hud-btn" title="Eyedropper: Click anywhere to pick color (E)">🧪 Eyedropper (E)</button>
+          </div>
+        </div>
+
+        <!-- Seeker Perks HUD (Bottom Center) -->
+        <div id="seeker-hud" class="game-hud hidden">
+          <div class="perks-container" id="seeker-perks-list">
+            <!-- Populated dynamically (3 random perks) -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Spectating HUD -->
+      <div id="spectator-hud" class="spectator-banner hidden">
+        <span>SPECTATING MODE - Waiting for game to finish...</span>
+      </div>
+    </div>
+
+    <!-- ==============================================
+         GAME OVER VIEW
+         ============================================== -->
+    <div id="view-gameover" class="card">
+      <h1 id="gameover-title" class="gameover-title">GAME OVER</h1>
+      <div id="gameover-winner-banner" class="winner-banner">Hiders Won!</div>
+
+      <div class="gameover-stats">
+        <h3>Match Summary</h3>
+        <p>Lobby: <span id="gameover-lobby-code">----</span></p>
+        <p>Remaining Hiders: <span id="gameover-hiders-left">0</span></p>
+      </div>
+
+      <div class="gameover-actions">
+        <button id="btn-back-to-lobby" class="btn btn-primary">Return to Lobby</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
